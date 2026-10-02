@@ -1,82 +1,119 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Float, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from pydantic import BaseModel, ConfigDict, Field
 
-from db.database import Base
 from utils.enums import PlanStatus, PlanType
 
 
-class Plan(Base):
-    __tablename__ = "plans"
-
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-        index=True,
+class PlanCreate(BaseModel):
+    plan_name: str = Field(
+        min_length=3,
+        max_length=150,
     )
 
-    plan_name: Mapped[str] = mapped_column(
-        String(150),
-        unique=True,
-        index=True,
-        nullable=False,
+    description: str | None = Field(
+        default=None,
+        max_length=1000,
     )
 
-    description: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
+    plan_type: PlanType
+
+    validity_days: int = Field(
+        gt=0,
+        le=3650,
     )
 
-    plan_type: Mapped[PlanType] = mapped_column(
-        Enum(PlanType),
-        nullable=False,
-        index=True,
-    )
-
-    validity_days: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-    )
-
-    data_limit_mb: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
+    data_limit_mb: int = Field(
         default=0,
+        ge=0,
     )
 
-    voice_limit_minutes: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
+    voice_limit_minutes: int = Field(
         default=0,
+        ge=0,
     )
 
-    sms_limit: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
+    sms_limit: int = Field(
         default=0,
+        ge=0,
     )
 
-    price: Mapped[float] = mapped_column(
-        Float,
-        nullable=False,
+    price: float = Field(
+        gt=0,
     )
 
-    status: Mapped[PlanStatus] = mapped_column(
-        Enum(PlanStatus),
-        nullable=False,
-        default=PlanStatus.ACTIVE,
-        index=True,
+
+class PlanUpdate(BaseModel):
+    plan_name: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=150,
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
+    description: str | None = Field(
+        default=None,
+        max_length=1000,
     )
 
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=False,
+    plan_type: PlanType | None = None
+
+    validity_days: int | None = Field(
+        default=None,
+        gt=0,
+        le=3650,
+    )
+
+    data_limit_mb: int | None = Field(
+        default=None,
+        ge=0,
+    )
+
+    voice_limit_minutes: int | None = Field(
+        default=None,
+        ge=0,
+    )
+
+    sms_limit: int | None = Field(
+        default=None,
+        ge=0,
+    )
+
+    price: float | None = Field(
+        default=None,
+        gt=0,
+    )
+
+
+class PlanResponse(BaseModel):
+    id: int
+    plan_name: str
+    description: str | None
+    plan_type: PlanType
+    validity_days: int
+    data_limit_mb: int
+    voice_limit_minutes: int
+    sms_limit: int
+    price: float
+    status: PlanStatus
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+
+class PlanComparisonResponse(BaseModel):
+    id: int
+    plan_name: str
+    plan_type: PlanType
+    validity_days: int
+    data_limit_mb: int
+    voice_limit_minutes: int
+    sms_limit: int
+    price: float
+    status: PlanStatus
+
+    model_config = ConfigDict(
+        from_attributes=True
     )

@@ -1,85 +1,104 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column
+from pydantic import BaseModel, ConfigDict, Field
 
-from db.database import Base
 from utils.enums import KYCStatus
 
 
-class Customer(Base):
-    __tablename__ = "customers"
+class CustomerCreate(BaseModel):
+    user_id: int = Field(gt=0)
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-        index=True,
+    customer_number: str = Field(
+        min_length=3,
+        max_length=50,
     )
 
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
-        unique=True,
-        nullable=False,
-        index=True,
+    address_line1: str | None = Field(
+        default=None,
+        max_length=255,
     )
 
-    customer_number: Mapped[str] = mapped_column(
-        String(50),
-        unique=True,
-        index=True,
-        nullable=False,
+    address_line2: str | None = Field(
+        default=None,
+        max_length=255,
     )
 
-    address_line1: Mapped[str | None] = mapped_column(
-        String(255),
-        nullable=True,
+    city: str | None = Field(
+        default=None,
+        max_length=100,
     )
 
-    address_line2: Mapped[str | None] = mapped_column(
-        String(255),
-        nullable=True,
+    state: str | None = Field(
+        default=None,
+        max_length=100,
     )
 
-    city: Mapped[str | None] = mapped_column(
-        String(100),
-        nullable=True,
+    postal_code: str | None = Field(
+        default=None,
+        max_length=20,
     )
 
-    state: Mapped[str | None] = mapped_column(
-        String(100),
-        nullable=True,
+    country: str | None = Field(
+        default=None,
+        max_length=100,
     )
 
-    postal_code: Mapped[str | None] = mapped_column(
-        String(20),
-        nullable=True,
+    kyc_status: KYCStatus = KYCStatus.PENDING
+
+
+class CustomerUpdate(BaseModel):
+    address_line1: str | None = Field(
+        default=None,
+        max_length=255,
     )
 
-    country: Mapped[str | None] = mapped_column(
-        String(100),
-        nullable=True,
+    address_line2: str | None = Field(
+        default=None,
+        max_length=255,
     )
 
-    kyc_status: Mapped[KYCStatus] = mapped_column(
-        Enum(KYCStatus),
-        nullable=False,
-        default=KYCStatus.PENDING,
+    city: str | None = Field(
+        default=None,
+        max_length=100,
     )
 
-    is_active: Mapped[bool] = mapped_column(
-        Boolean,
-        default=True,
-        nullable=False,
+    state: str | None = Field(
+        default=None,
+        max_length=100,
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
+    postal_code: str | None = Field(
+        default=None,
+        max_length=20,
     )
 
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=False,
+    country: str | None = Field(
+        default=None,
+        max_length=100,
+    )
+
+    kyc_status: KYCStatus | None = None
+
+
+class CustomerResponse(BaseModel):
+    id: int
+    user_id: int
+    customer_number: str
+
+    address_line1: str | None
+    address_line2: str | None
+    city: str | None
+    state: str | None
+    postal_code: str | None
+    country: str | None
+
+    kyc_status: KYCStatus
+
+    is_active: bool
+
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True
     )

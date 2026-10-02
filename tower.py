@@ -1,94 +1,100 @@
 from datetime import datetime
-from enum import Enum
 
-from sqlalchemy import DateTime, Float, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from pydantic import BaseModel, ConfigDict, Field
 
-from db.database import Base
+from models.tower import TowerStatus, TowerType
 
 
-class TowerType(str, Enum):
-    MACRO = "Macro"
-    MICRO = "Micro"
-    SMALL_CELL = "Small Cell"
-    FEMTO = "Femto"
-
-
-class TowerStatus(str, Enum):
-    ACTIVE = "Active"
-    MAINTENANCE = "Maintenance"
-    OFFLINE = "Offline"
-    DECOMMISSIONED = "Decommissioned"
-
-
-class Tower(Base):
-    __tablename__ = "towers"
-
-    id: Mapped[int] = mapped_column(
-        Integer,
-        primary_key=True,
-        index=True,
+class TowerCreate(BaseModel):
+    tower_code: str = Field(
+        min_length=1,
+        max_length=100,
     )
 
-    tower_code: Mapped[str] = mapped_column(
-        String(100),
-        unique=True,
-        nullable=False,
-        index=True,
+    tower_name: str = Field(
+        min_length=1,
+        max_length=150,
     )
 
-    tower_name: Mapped[str] = mapped_column(
-        String(150),
-        nullable=False,
+    tower_type: TowerType
+
+    latitude: float = Field(
+        ge=-90,
+        le=90,
     )
 
-    tower_type: Mapped[TowerType] = mapped_column(
-        String(50),
-        nullable=False,
-        index=True,
+    longitude: float = Field(
+        ge=-180,
+        le=180,
     )
 
-    latitude: Mapped[float] = mapped_column(
-        Float,
-        nullable=False,
+    address: str | None = None
+
+    coverage_area: float = Field(
+        gt=0,
     )
 
-    longitude: Mapped[float] = mapped_column(
-        Float,
-        nullable=False,
+    capacity: int = Field(
+        gt=0,
     )
 
-    address: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
+    status: TowerStatus = TowerStatus.ACTIVE
+
+
+class TowerUpdate(BaseModel):
+    tower_name: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=150,
     )
 
-    coverage_area: Mapped[float] = mapped_column(
-        Float,
-        nullable=False,
+    tower_type: TowerType | None = None
+
+    latitude: float | None = Field(
+        default=None,
+        ge=-90,
+        le=90,
     )
 
-    capacity: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
+    longitude: float | None = Field(
+        default=None,
+        ge=-180,
+        le=180,
     )
 
-    status: Mapped[TowerStatus] = mapped_column(
-        String(50),
-        nullable=False,
-        default=TowerStatus.ACTIVE,
-        index=True,
+    address: str | None = None
+
+    coverage_area: float | None = Field(
+        default=None,
+        gt=0,
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
-        nullable=False,
+    capacity: int | None = Field(
+        default=None,
+        gt=0,
     )
 
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
-        nullable=False,
+    status: TowerStatus | None = None
+
+
+class TowerStatusUpdate(BaseModel):
+    status: TowerStatus
+
+
+class TowerResponse(BaseModel):
+    id: int
+    tower_code: str
+    tower_name: str
+    tower_type: TowerType
+    latitude: float
+    longitude: float
+    address: str | None
+    coverage_area: float
+    capacity: int
+    status: TowerStatus
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
     )

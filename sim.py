@@ -1,72 +1,82 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column
+from pydantic import BaseModel, ConfigDict, Field
 
-from db.database import Base
 from utils.enums import SIMStatus, SIMType
 
 
-class SIM(Base):
-    __tablename__ = "sims"
-
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-        index=True,
+class SIMCreate(BaseModel):
+    sim_number: str = Field(
+        min_length=5,
+        max_length=50,
     )
 
-    sim_number: Mapped[str] = mapped_column(
-        String(50),
-        unique=True,
-        index=True,
-        nullable=False,
+    sim_type: SIMType
+
+    customer_id: int | None = Field(
+        default=None,
+        gt=0,
     )
 
-    sim_type: Mapped[SIMType] = mapped_column(
-        Enum(SIMType),
-        nullable=False,
-        index=True,
+    plan_id: int | None = Field(
+        default=None,
+        gt=0,
     )
 
-    status: Mapped[SIMStatus] = mapped_column(
-        Enum(SIMStatus),
-        nullable=False,
-        default=SIMStatus.AVAILABLE,
-        index=True,
+    tower_id: int | None = Field(
+        default=None,
+        gt=0,
     )
 
-    activation_date: Mapped[date | None] = mapped_column(
-        Date,
-        nullable=True,
+
+class SIMUpdate(BaseModel):
+    sim_number: str | None = Field(
+        default=None,
+        min_length=5,
+        max_length=50,
     )
 
-    customer_id: Mapped[int | None] = mapped_column(
-        ForeignKey("customers.id"),
-        nullable=True,
-        index=True,
+    sim_type: SIMType | None = None
+
+    customer_id: int | None = Field(
+        default=None,
+        gt=0,
     )
 
-    plan_id: Mapped[int | None] = mapped_column(
-        ForeignKey("plans.id"),
-        nullable=True,
-        index=True,
+    plan_id: int | None = Field(
+        default=None,
+        gt=0,
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
+    tower_id: int | None = Field(
+        default=None,
+        gt=0,
     )
 
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=False,
+
+class SIMResponse(BaseModel):
+    id: int
+    sim_number: str
+    sim_type: SIMType
+    status: SIMStatus
+    activation_date: date | None
+    customer_id: int | None
+    plan_id: int | None
+    tower_id: int | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True
     )
 
-    tower_id: Mapped[int | None] = mapped_column(
-    ForeignKey("towers.id"),
-    nullable=True,
-    index=True,
-)
+
+class SIMReplaceRequest(BaseModel):
+    new_sim_id: int = Field(
+        gt=0
+    )
+
+    reason: str | None = Field(
+        default=None,
+        max_length=500,
+    )

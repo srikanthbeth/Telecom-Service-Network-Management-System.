@@ -1,70 +1,83 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from pydantic import BaseModel, ConfigDict, Field
 
-from db.database import Base
 from utils.enums import OutageSeverity
 
 
-class NetworkOutage(Base):
-    __tablename__ = "network_outages"
-
-    id: Mapped[int] = mapped_column(
-        Integer,
-        primary_key=True,
-        index=True,
+class NetworkOutageCreate(BaseModel):
+    outage_code: str = Field(
+        min_length=2,
+        max_length=50,
     )
 
-    outage_code: Mapped[str] = mapped_column(
-        String(50),
-        unique=True,
-        nullable=False,
-        index=True,
+    outage_type: str = Field(
+        min_length=2,
+        max_length=100,
     )
 
-    outage_type: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
-        index=True,
+    description: str | None = None
+
+    severity: OutageSeverity
+
+    start_time: datetime
+
+    expected_resolution: datetime | None = None
+
+    tower_ids: list[int] = Field(
+        min_length=1,
     )
 
-    description: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
+
+class NetworkOutageUpdate(BaseModel):
+    outage_type: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=100,
     )
 
-    severity: Mapped[OutageSeverity] = mapped_column(
-        Enum(OutageSeverity),
-        nullable=False,
-        index=True,
+    description: str | None = None
+
+    severity: OutageSeverity | None = None
+
+    start_time: datetime | None = None
+
+    expected_resolution: datetime | None = None
+
+
+class NetworkOutageResolve(BaseModel):
+    actual_resolution: datetime | None = None
+
+
+class TowerResponse(BaseModel):
+    id: int
+    tower_code: str
+    tower_name: str
+    tower_type: str
+    latitude: float
+    longitude: float
+    status: str
+
+    model_config = ConfigDict(
+        from_attributes=True,
     )
 
-    start_time: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        index=True,
-    )
 
-    expected_resolution: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-    )
+class AffectedCustomerResponse(BaseModel):
+    customer_id: int
 
-    actual_resolution: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-    )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
-    )
+class NetworkOutageResponse(BaseModel):
+    id: int
+    outage_code: str
+    outage_type: str
+    description: str | None
+    severity: OutageSeverity
+    start_time: datetime
+    expected_resolution: datetime | None
+    actual_resolution: datetime | None
+    created_at: datetime
+    updated_at: datetime
 
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=False,
-    )
+    tower_ids: list[int] = []
+    affected_customer_ids: list[int] = []

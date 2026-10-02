@@ -1,70 +1,83 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import (
-    DateTime,
-    Enum,
-    ForeignKey,
-    String,
-)
-from sqlalchemy.orm import Mapped, mapped_column
+from pydantic import BaseModel, ConfigDict, Field
 
-from db.database import Base
 from utils.enums import DeviceStatus, DeviceType
 
 
-class Device(Base):
-    __tablename__ = "devices"
-
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-        index=True,
+class DeviceCreate(BaseModel):
+    imei: str = Field(
+        min_length=15,
+        max_length=20,
+    )
+    model: str = Field(
+        min_length=1,
+        max_length=150,
+    )
+    manufacturer: str = Field(
+        min_length=1,
+        max_length=150,
+    )
+    device_type: DeviceType
+    customer_id: int | None = Field(
+        default=None,
+        gt=0,
     )
 
-    imei: Mapped[str] = mapped_column(
-        String(20),
-        unique=True,
-        index=True,
-        nullable=False,
+
+class DeviceUpdate(BaseModel):
+    imei: str | None = Field(
+        default=None,
+        min_length=15,
+        max_length=20,
+    )
+    model: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=150,
+    )
+    manufacturer: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=150,
+    )
+    device_type: DeviceType | None = None
+    customer_id: int | None = Field(
+        default=None,
+        gt=0,
     )
 
-    model: Mapped[str] = mapped_column(
-        String(150),
-        nullable=False,
+
+class DeviceResponse(BaseModel):
+    id: int
+    imei: str
+    model: str
+    manufacturer: str
+    device_type: DeviceType
+    status: DeviceStatus
+    customer_id: int | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
     )
 
-    manufacturer: Mapped[str] = mapped_column(
-        String(150),
-        nullable=False,
+
+class DeviceSIMAssignRequest(BaseModel):
+    sim_id: int = Field(
+        gt=0,
     )
 
-    device_type: Mapped[DeviceType] = mapped_column(
-        Enum(DeviceType),
-        nullable=False,
-        index=True,
-    )
 
-    status: Mapped[DeviceStatus] = mapped_column(
-        Enum(DeviceStatus),
-        nullable=False,
-        default=DeviceStatus.ACTIVE,
-        index=True,
-    )
+class DeviceSIMMappingResponse(BaseModel):
+    id: int
+    device_id: int
+    sim_id: int
+    is_active: bool
+    assigned_at: datetime
+    unassigned_at: datetime | None
 
-    customer_id: Mapped[int | None] = mapped_column(
-        ForeignKey("customers.id"),
-        nullable=True,
-        index=True,
-    )
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
-    )
-
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=False,
+    model_config = ConfigDict(
+        from_attributes=True,
     )

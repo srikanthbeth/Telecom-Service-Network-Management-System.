@@ -1,57 +1,76 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Enum, Float, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from pydantic import BaseModel, ConfigDict, Field
 
-from db.database import Base
 from utils.enums import UsageType
 
 
-class Usage(Base):
-    __tablename__ = "usage"
-
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-        index=True,
+class UsageCreate(BaseModel):
+    customer_id: int = Field(
+        gt=0
     )
 
-    customer_id: Mapped[int] = mapped_column(
-        ForeignKey("customers.id"),
-        nullable=False,
-        index=True,
+    sim_id: int = Field(
+        gt=0
     )
 
-    sim_id: Mapped[int] = mapped_column(
-        ForeignKey("sims.id"),
-        nullable=False,
-        index=True,
+    subscription_id: int = Field(
+        gt=0
     )
 
-    subscription_id: Mapped[int] = mapped_column(
-        ForeignKey("subscriptions.id"),
-        nullable=False,
-        index=True,
+    usage_type: UsageType
+
+    usage_date: date
+
+    quantity: float = Field(
+        gt=0
     )
 
-    usage_type: Mapped[UsageType] = mapped_column(
-        Enum(UsageType),
-        nullable=False,
-        index=True,
+
+class UsageResponse(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True
     )
 
-    usage_date: Mapped[date] = mapped_column(
-        Date,
-        nullable=False,
-        index=True,
-    )
+    id: int
+    customer_id: int
+    sim_id: int
+    subscription_id: int
+    usage_type: UsageType
+    usage_date: date
+    quantity: float
+    created_at: datetime
 
-    quantity: Mapped[float] = mapped_column(
-        Float,
-        nullable=False,
-    )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
-    )
+class UsageSummaryResponse(BaseModel):
+    customer_id: int
+    sim_id: int
+    subscription_id: int
+
+    data_usage_mb: float
+    voice_usage_minutes: float
+    sms_usage: float
+
+    total_records: int
+
+
+class UsageUtilizationResponse(BaseModel):
+    customer_id: int
+    sim_id: int
+    subscription_id: int
+    plan_id: int
+
+    data_used_mb: float
+    data_limit_mb: float
+    data_percentage: float
+    data_remaining_mb: float
+
+    voice_used_minutes: float
+    voice_limit_minutes: float
+    voice_percentage: float
+    voice_remaining_minutes: float
+
+    sms_used: float
+    sms_limit: float
+    sms_percentage: float
+    sms_remaining: float

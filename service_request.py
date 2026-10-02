@@ -1,9 +1,6 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
-
-from db.database import Base
+from pydantic import BaseModel, ConfigDict, Field
 
 from utils.enums import (
     ServiceRequestStatus,
@@ -11,70 +8,55 @@ from utils.enums import (
 )
 
 
-class ServiceRequest(Base):
-    __tablename__ = "service_requests"
+class ServiceRequestCreate(BaseModel):
+    customer_id: int
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-        index=True,
+    request_type: ServiceRequestType
+
+    reason: str | None = Field(
+        default=None,
+        max_length=255,
     )
 
-    request_number: Mapped[str] = mapped_column(
-        String(50),
-        unique=True,
-        index=True,
-        nullable=False,
+    description: str | None = None
+
+
+class ServiceRequestStatusUpdate(BaseModel):
+    status: ServiceRequestStatus
+
+    remarks: str | None = Field(
+        default=None,
+        max_length=500,
     )
 
-    customer_id: Mapped[int] = mapped_column(
-        ForeignKey("customers.id"),
-        nullable=False,
-        index=True,
+
+class ServiceRequestResponse(BaseModel):
+    id: int
+    request_number: str
+    customer_id: int
+    request_type: ServiceRequestType
+    status: ServiceRequestStatus
+    reason: str | None
+    description: str | None
+    created_by: int
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None
+
+    model_config = ConfigDict(
+        from_attributes=True,
     )
 
-    request_type: Mapped[ServiceRequestType] = mapped_column(
-        Enum(ServiceRequestType),
-        nullable=False,
-        index=True,
-    )
 
-    status: Mapped[ServiceRequestStatus] = mapped_column(
-        Enum(ServiceRequestStatus),
-        nullable=False,
-        default=ServiceRequestStatus.PENDING,
-        index=True,
-    )
+class ServiceRequestHistoryResponse(BaseModel):
+    id: int
+    service_request_id: int
+    old_status: ServiceRequestStatus | None
+    new_status: ServiceRequestStatus
+    remarks: str | None
+    changed_by: int
+    changed_at: datetime
 
-    reason: Mapped[str | None] = mapped_column(
-        String(255),
-        nullable=True,
-    )
-
-    description: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-    )
-
-    created_by: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
-        nullable=False,
-        index=True,
-    )
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
-    )
-
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=False,
-    )
-
-    completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
+    model_config = ConfigDict(
+        from_attributes=True,
     )

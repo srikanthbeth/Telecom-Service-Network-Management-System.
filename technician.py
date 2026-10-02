@@ -1,86 +1,146 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from pydantic import BaseModel, ConfigDict, Field
 
-from db.database import Base
-from utils.enums import TechnicianAvailability
+from utils.enums import (
+    TechnicianAvailability,
+    TechnicianJobStatus,
+)
 
 
-class Technician(Base):
-    __tablename__ = "technicians"
+class TechnicianCreate(BaseModel):
+    user_id: int
 
-    id: Mapped[int] = mapped_column(
-        Integer,
-        primary_key=True,
-        index=True,
+    employee_id: str = Field(
+        min_length=2,
+        max_length=50,
     )
 
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
-        unique=True,
-        nullable=False,
-        index=True,
+    full_name: str = Field(
+        min_length=2,
+        max_length=150,
     )
 
-    employee_id: Mapped[str] = mapped_column(
-        String(50),
-        unique=True,
-        nullable=False,
-        index=True,
+    phone: str = Field(
+        min_length=5,
+        max_length=30,
     )
 
-    full_name: Mapped[str] = mapped_column(
-        String(150),
-        nullable=False,
+    availability: TechnicianAvailability = (
+        TechnicianAvailability.AVAILABLE
     )
 
-    phone: Mapped[str] = mapped_column(
-        String(30),
-        nullable=False,
+    latitude: float | None = None
+    longitude: float | None = None
+
+    service_area: str | None = Field(
+        default=None,
+        max_length=255,
     )
 
-    availability: Mapped[TechnicianAvailability] = mapped_column(
-        String(50),
-        nullable=False,
-        default=TechnicianAvailability.AVAILABLE.value,
-        index=True,
+    address: str | None = None
+
+
+class TechnicianUpdate(BaseModel):
+    full_name: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=150,
     )
 
-    latitude: Mapped[float | None] = mapped_column(
-        Float,
-        nullable=True,
+    phone: str | None = Field(
+        default=None,
+        min_length=5,
+        max_length=30,
     )
 
-    longitude: Mapped[float | None] = mapped_column(
-        Float,
-        nullable=True,
+    availability: TechnicianAvailability | None = None
+
+    latitude: float | None = None
+    longitude: float | None = None
+
+    service_area: str | None = Field(
+        default=None,
+        max_length=255,
     )
 
-    service_area: Mapped[str | None] = mapped_column(
-        String(255),
-        nullable=True,
+    address: str | None = None
+
+
+class TechnicianSkillCreate(BaseModel):
+    skill_name: str = Field(
+        min_length=2,
+        max_length=100,
     )
 
-    address: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
+
+class TechnicianSkillResponse(BaseModel):
+    id: int
+    technician_id: int
+    skill_name: str
+    created_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
+
+class TechnicianResponse(BaseModel):
+    id: int
+    user_id: int
+    employee_id: str
+    full_name: str
+    phone: str
+    availability: TechnicianAvailability
+    latitude: float | None
+    longitude: float | None
+    service_area: str | None
+    address: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
     )
 
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=False,
+
+class TechnicianAssignmentCreate(BaseModel):
+    technician_id: int
+
+    customer_id: int | None = None
+
+    job_type: str = Field(
+        min_length=2,
+        max_length=100,
     )
 
-    user = relationship(
-        "User",
-        foreign_keys=[user_id],
+    job_reference_id: int | None = None
+
+    description: str | None = None
+
+
+class TechnicianReassignment(BaseModel):
+    technician_id: int
+
+
+class TechnicianAssignmentStatusUpdate(BaseModel):
+    status: TechnicianJobStatus
+
+
+class TechnicianAssignmentResponse(BaseModel):
+    id: int
+    technician_id: int
+    customer_id: int | None
+    job_type: str
+    job_reference_id: int | None
+    description: str | None
+    status: TechnicianJobStatus
+    assigned_at: datetime
+    started_at: datetime | None
+    completed_at: datetime | None
+    notes: str | None
+    assigned_by: int | None
+
+    model_config = ConfigDict(
+        from_attributes=True,
     )

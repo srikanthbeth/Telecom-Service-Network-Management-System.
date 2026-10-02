@@ -1,62 +1,27 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from db.database import Base
+from pydantic import BaseModel, ConfigDict
 
 
-class AuditLog(Base):
-    __tablename__ = "audit_logs"
+class AuditLogCreate(BaseModel):
+    user_id: int | None = None
+    action: str
+    entity: str
+    entity_id: int | None = None
+    previous_value: str | None = None
+    new_value: str | None = None
 
-    id: Mapped[int] = mapped_column(
-        Integer,
-        primary_key=True,
-        index=True,
-    )
 
-    user_id: Mapped[int | None] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL"),
-        nullable=True,
-        index=True,
-    )
+class AuditLogResponse(BaseModel):
+    id: int
+    user_id: int | None
+    action: str
+    entity: str
+    entity_id: int | None
+    timestamp: datetime
+    previous_value: str | None
+    new_value: str | None
 
-    action: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
-        index=True,
-    )
-
-    entity: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
-        index=True,
-    )
-
-    entity_id: Mapped[int | None] = mapped_column(
-        Integer,
-        nullable=True,
-        index=True,
-    )
-
-    timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-        index=True,
-    )
-
-    previous_value: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-    )
-
-    new_value: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-    )
-
-    user = relationship(
-        "User",
-        back_populates="audit_logs",
+    model_config = ConfigDict(
+        from_attributes=True,
     )
